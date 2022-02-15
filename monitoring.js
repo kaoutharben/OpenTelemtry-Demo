@@ -1,19 +1,28 @@
+require("dotenv").config({ path: __dirname + "/.env" });
+const { MeterProvider } = require("@opentelemetry/sdk-metrics-base");
 const {
-  MeterProvider,
-  ConsoleMetricExporter,
-} = require("@opentelemetry/metrics");
+  CollectorMetricExporter,
+} = require("@opentelemetry/exporter-collector");
+
+const collectorOptions = {
+  url: `http://${process.env.COLLECTOR_ENDPOINT}:55681/v1/metrics`, // url is optional and can be omitted - default is http://localhost:55681/v1/metrics
+  concurrencyLimit: 1, // an optional limit on pending requests
+};
+
+const exporter = new CollectorMetricExporter(collectorOptions);
 
 const meter = new MeterProvider({
-  exporter: new ConsoleMetricExporter(),
+  exporter,
   interval: 1000,
-}).getMeter("demo-meter");
+}).getMeter("counter-meterics");
 
-const requestCount = meter.createCounter("requests", {
+const counter = meter.createCounter("metric_name_test");
+counter.add(15, { key: "value" });
+
+const requestCount = meter.createCounter("requests_count", {
   description: "Count all incoming requests",
 });
-const upDownCounter = meter.createUpDownCounter('test_up_down_counter', {
-    description: 'Example of a UpDownCounter'
-  });
+
 const boundInstruments = new Map();
 
 module.exports.countAllRequests = () => {
